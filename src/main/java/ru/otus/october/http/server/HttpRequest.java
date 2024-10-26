@@ -1,14 +1,26 @@
 package ru.otus.october.http.server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class HttpRequest {
     private String rawRequest;
+
+    public HttpMethod getMethod() {
+        return method;
+    }
+
     private HttpMethod method;
     private String uri;
+    private String body;
     private Map<String, String> parameters;
     private Exception exception;
+    private Map<String, String> headersMap;
+    private static final Logger LOGGER = LogManager.getLogger(HttpRequest.class);
 
     public Exception getException() {
         return exception;
@@ -22,9 +34,18 @@ public class HttpRequest {
         return uri;
     }
 
+    public String getRoutingKey() {
+        return method + " " + uri;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
     public HttpRequest(String rawRequest) {
         this.rawRequest = rawRequest;
         this.parse();
+        this.headersParsing();
     }
 
     public String getParameter(String key) {
@@ -50,14 +71,31 @@ public class HttpRequest {
                 parameters.put(keyValue[0], keyValue[1]);
             }
         }
+        if (method == HttpMethod.POST) {
+            this.body = rawRequest.substring(rawRequest.indexOf("\r\n\r\n") + 4);
+        }
     }
 
-    public void info(boolean debug) {
-        if (debug) {
-            System.out.println(rawRequest);
+    private void headersParsing() {
+        String headers = rawRequest.substring(rawRequest.indexOf("\r\n") + 2);
+        String[] lines = headers.split("\r\n");
+        headersMap = new HashMap<>();
+        for (String line : lines) {
+            int index = line.indexOf(": ");
+            if (index != -1) {
+                String headerKey = line.substring(0, index).trim();
+                String headerValue = line.substring(index + 2).trim();
+                headersMap.put(headerKey, headerValue);
+            }
         }
-        System.out.println("Method: " + method);
-        System.out.println("URI: " + uri);
-        System.out.println("Parameters: " + parameters);
+
+    }
+
+    public void info() {
+        LOGGER.debug(rawRequest);
+        LOGGER.info("Method: " + method);
+        LOGGER.info("URI: " + uri);
+        LOGGER.info("Parameters: " + parameters);
+        LOGGER.info("Body: " + body);
     }
 }

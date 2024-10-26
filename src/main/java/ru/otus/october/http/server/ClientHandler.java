@@ -19,16 +19,16 @@ public class ClientHandler {
         this.in = new DataInputStream(socket.getInputStream());
         this.out = new DataOutputStream(socket.getOutputStream());
         this.dispatcher = new Dispatcher();
-
         try {
-            System.out.println("Клиент подключился ");
             byte[] buffer = new byte[8192];
             int n = socket.getInputStream().read(buffer);
-            String rawRequest = new String(buffer, 0, n);
-            HttpRequest request = new HttpRequest(rawRequest);
-            request.info(true);
-            dispatcher.execute(request, socket.getOutputStream());
-
+            if (n < 1) {
+            } else {
+                String rawRequest = new String(buffer, 0, n);
+                HttpRequest request = new HttpRequest(rawRequest);
+                request.info();
+                dispatcher.execute(request, socket.getOutputStream());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
