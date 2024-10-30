@@ -6,9 +6,11 @@ import ru.otus.october.http.server.processors.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class Dispatcher {
+    private final HashSet<String> allowedUris;
     private Map<String, RequestProcessor> processors;
     private RequestProcessor defaultNotFoundProcessor;
     private RequestProcessor defaultInternalServerErrorProcessor;
@@ -19,6 +21,10 @@ public class Dispatcher {
     public Dispatcher() {
         this.itemsRepository = new ItemsRepository();
         this.processors = new HashMap<>();
+        this.allowedUris = new HashSet<>();
+        this.allowedUris.add("/calculator");
+        this.allowedUris.add("/items");
+        this.allowedUris.add("/");
         this.processors.put(HttpMethod.GET + " /", new HelloWorldProcessor());
         this.processors.put(HttpMethod.GET + " /calculator", new CalculatorProcessor());
         this.processors.put(HttpMethod.GET + " /items", new GetAllItemsProcessor(itemsRepository));
@@ -32,7 +38,7 @@ public class Dispatcher {
     public void execute(HttpRequest request, OutputStream out) throws IOException {
         try {
             if (!processors.containsKey(request.getRoutingKey())) {
-                if (isUriExist(request.getUri())) {
+                if (allowedUris.contains(request.getUri())) {
                     defaultMethodNotAllowedProcessor.execute(request, out);
                     return;
                 }
@@ -48,19 +54,5 @@ public class Dispatcher {
             e.printStackTrace();
             defaultInternalServerErrorProcessor.execute(request, out);
         }
-    }
-
-
-    public Boolean isUriExist(String uriIncom) {
-        String[] keys;
-        String uriForCheck = null;
-        for (String s : processors.keySet()) {
-            keys = s.split(" ");
-            uriForCheck = keys[1];
-            if (uriForCheck.equals(uriIncom)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
