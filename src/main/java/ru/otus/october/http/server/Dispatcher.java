@@ -19,10 +19,10 @@ public class Dispatcher {
     public Dispatcher() {
         this.itemsRepository = new ItemsRepository();
         this.processors = new HashMap<>();
-        this.processors.put("GET /", new HelloWorldProcessor());
-        this.processors.put("GET /calculator", new CalculatorProcessor());
-        this.processors.put("GET /items", new GetAllItemsProcessor(itemsRepository));
-        this.processors.put("POST /items", new CreateNewItemsProcessor(itemsRepository));
+        this.processors.put(HttpMethod.GET + " /", new HelloWorldProcessor());
+        this.processors.put(HttpMethod.GET + " /calculator", new CalculatorProcessor());
+        this.processors.put(HttpMethod.GET + " /items", new GetAllItemsProcessor(itemsRepository));
+        this.processors.put(HttpMethod.POST + " /items", new CreateNewItemsProcessor(itemsRepository));
         this.defaultNotFoundProcessor = new DefaultNotFoundProcessor();
         this.defaultInternalServerErrorProcessor = new DefaultInternalServerErrorProcessor();
         this.defaultBadRequestProcessor = new DefaultBadRequestProcessor();
@@ -31,16 +31,15 @@ public class Dispatcher {
 
     public void execute(HttpRequest request, OutputStream out) throws IOException {
         try {
-            if ((request.getMethod() != ((HttpMethod.GET)) ||
-                   (request.getMethod() != (HttpMethod.POST)) ||
-                    (request.getMethod() != (HttpMethod.DELETE)))) {
-                defaultMethodNotAllowedProcessor.execute(request, out);
-                return;
-            }
             if (!processors.containsKey(request.getRoutingKey())) {
+                if (isUriExist(request.getUri())) {
+                    defaultMethodNotAllowedProcessor.execute(request, out);
+                    return;
+                }
                 defaultNotFoundProcessor.execute(request, out);
                 return;
             }
+
             processors.get(request.getRoutingKey()).execute(request, out);
         } catch (BadRequestException e) {
             request.setException(e);
@@ -49,5 +48,19 @@ public class Dispatcher {
             e.printStackTrace();
             defaultInternalServerErrorProcessor.execute(request, out);
         }
+    }
+
+
+    public Boolean isUriExist(String uriIncom) {
+        String[] keys;
+        String uriForCheck = null;
+        for (String s : processors.keySet()) {
+            keys = s.split(" ");
+            uriForCheck = keys[1];
+            if (uriForCheck.equals(uriIncom)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
