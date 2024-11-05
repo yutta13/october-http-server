@@ -21,10 +21,17 @@ public class Dispatcher {
     public Dispatcher() {
         this.itemsRepository = new ItemsRepository();
         this.processors = new HashMap<>();
+       
         this.allowedUris = new HashSet<>();
-        this.allowedUris.add("/calculator");
-        this.allowedUris.add("/items");
-        this.allowedUris.add("/");
+//        this.allowedUris.add("/calculator");
+//        this.allowedUris.add("/items");
+//        this.allowedUris.add("/");
+        for (String key : processors.keySet()) {
+            String uri = key.split(" ")[1];
+            if (!allowedUris.contains(uri)) {
+                allowedUris.add(uri);
+            }
+        }
         this.processors.put(HttpMethod.GET + " /", new HelloWorldProcessor());
         this.processors.put(HttpMethod.GET + " /calculator", new CalculatorProcessor());
         this.processors.put(HttpMethod.GET + " /items", new GetAllItemsProcessor(itemsRepository));
@@ -34,7 +41,6 @@ public class Dispatcher {
         this.defaultBadRequestProcessor = new DefaultBadRequestProcessor();
         this.defaultMethodNotAllowedProcessor = new DefaultMethodNotAllowedProcessor();
     }
-
     public void execute(HttpRequest request, OutputStream out) throws IOException {
         try {
             if (!processors.containsKey(request.getRoutingKey())) {
